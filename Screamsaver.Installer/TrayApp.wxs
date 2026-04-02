@@ -1,0 +1,27 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <Fragment>
+    <ComponentGroup Id="TrayAppComponents" Directory="INSTALLFOLDER">
+
+      <Component Id="TrayAppExeComponent" Guid="C2D3E4F5-A6B7-4890-CDEF-012345678901">
+        <File Id="TrayAppExe"
+              Source="$(var.TrayAppPublishDir)\Screamsaver.TrayApp.exe"
+              KeyPath="yes" />
+      </Component>
+
+    </ComponentGroup>
+
+    <ComponentGroup Id="UninstallHelperComponents" Directory="INSTALLFOLDER">
+
+      <Component Id="UninstallHelperComponent" Guid="D3E4F5A6-B7C8-4901-DEF0-123456789012"
+                 Permanent="yes">
+        <!-- Permanent="yes" ensures this file survives long enough for the uninstall PIN CA to run -->
+        <File Id="UninstallHelperExe"
+              Source="$(var.UninstallHelperPublishDir)\Screamsaver.UninstallHelper.exe"
+              KeyPath="yes" />
+      </Component>
+
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>

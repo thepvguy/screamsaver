@@ -1,0 +1,55 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Fragment>
+    <ComponentGroup Id="ServiceComponents" Directory="INSTALLFOLDER">
+
+      <!--
+        Sets install directory ACLs natively via MSI (no scripting required).
+        Administrators and SYSTEM receive full control; Users receive read and execute only.
+        util:PermissionEx maps to the MsiLockPermissionsEx table — handled by the MSI
+        engine and applied atomically with the rest of the install, so failures roll back.
+      -->
+      <Component Id="DirAclComponent" Guid="E5F6A7B8-C9D0-4EF0-1234-567890ABCDEF">
+        <CreateFolder>
+          <util:PermissionEx User="SYSTEM"          GenericAll="yes" />
+          <util:PermissionEx User="Administrators"  GenericAll="yes" />
+          <util:PermissionEx User="Users"           Read="yes" GenericExecute="yes" />
+        </CreateFolder>
+      </Component>
+
+      <Component Id="ServiceExeComponent" Guid="B1C2D3E4-F5A6-4789-BCDE-F01234567890">
+        <File Id="ServiceExe"
+              Source="$(var.ServicePublishDir)\Screamsaver.Service.exe"
+              KeyPath="yes" />
+
+        <ServiceInstall Id="ScreamsaverService"
+                        Name="ScreamsaverService"
+                        DisplayName="Screamsaver Monitor Service"
+                        Description="Monitors microphone volume and triggers screen overlay for parental control."
+                        Type="ownProcess"
+                        Start="auto"
+                        Account="LocalSystem"
+                        ErrorControl="normal"
+                        Interactive="no" />
+
+        <ServiceControl Id="StartScreamsaverService"
+                        Name="ScreamsaverService"
+                        Start="install"
+                        Stop="both"
+                        Remove="uninstall"
+                        Wait="yes" />
+
+        <!-- Auto-restart on failure: 3 attempts, 3s delay each, reset after 1 day -->
+        <util:ServiceConfig ServiceName="ScreamsaverService"
+                            FirstFailureActionType="restart"
+                            SecondFailureActionType="restart"
+                            ThirdFailureActionType="restart"
+                            RestartServiceDelayInSeconds="3"
+                            ResetPeriodInDays="1" />
+      </Component>
+
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>

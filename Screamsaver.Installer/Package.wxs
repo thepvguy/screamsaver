@@ -1,0 +1,116 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Package Name="Screamsaver"
+           Manufacturer="Screamsaver"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="A7B2C3D4-E5F6-4789-ABCD-EF0123456789"
+           Scope="perMachine">
+
+    <SummaryInformation Description="Screamsaver parental control application" />
+
+    <!-- Always require elevation -->
+    <Require AdminPrivileges="yes" />
+
+    <!-- Block downgrades -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Screamsaver is already installed." />
+
+    <!-- Embed all files in the MSI -->
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="ProductFeature" Title="Screamsaver" Level="1">
+      <ComponentGroupRef Id="ServiceComponents" />
+      <ComponentGroupRef Id="TrayAppComponents" />
+      <ComponentGroupRef Id="RegistryComponents" />
+      <ComponentGroupRef Id="UninstallHelperComponents" />
+    </Feature>
+
+    <!-- Custom action: run UninstallHelper.exe before uninstall to verify PIN (UI sequence / interactive) -->
+    <CustomAction Id="CheckUninstallPin"
+                  FileRef="UninstallHelperExe"
+                  ExeCommand=""
+                  Execute="immediate"
+                  Return="check"
+                  Impersonate="yes" />
+
+    <!--
+      SCREAMSAVER_PIN is marked Hidden so its value is masked (shown as *****) in MSI
+      verbose logs even when passed on the command line.
+      Usage: msiexec /x {ProductCode} /quiet SCREAMSAVER_PIN=1234
+    -->
+    <Property Id="SCREAMSAVER_PIN" Hidden="yes" />
+
+    <!--
+      Two-step silent-uninstall PIN gate (SEC-C mitigation).
+
+      The fundamental constraint: any WiX ExeCommand that passes a secret must put it
+      somewhere in a process argument list.  The two-step approach minimises exposure:
+
+        Step 1 — WritePinToFile:
+          cmd.exe writes [SCREAMSAVER_PIN] to a temp file and exits immediately
+          (~5 ms).  The PIN is visible in cmd.exe's argument list only during this
+          brief window; cmd.exe is not branded "Screamsaver" in process monitors.
+
+        Step 2 — VerifySilentUninstallPin:
+          UninstallHelper reads the file, deletes it, and verifies the PIN.
+          The PIN never appears in UninstallHelper's argument list.
+
+      SCREAMSAVER_PIN is marked Hidden="yes" so it is masked in MSI verbose logs.
+      Usage: msiexec /x {ProductCode} /quiet SCREAMSAVER_PIN=1234
+
+      NOTE: The only approach that eliminates PIN exposure from all process command
+      lines entirely is a native or managed WiX CA DLL that calls PinValidator
+      in-process via the MSI session API.  That is the correct long-term fix.
+    -->
+    <!--
+      SEC-D mitigation: write the PIN file then immediately lock it to SYSTEM + Administrators
+      only via icacls, so standard-user processes (e.g. malware running as the child's user
+      account) cannot read the file during the brief window before VerifySilentUninstallPin
+      deletes it.  Admin/SYSTEM processes can still read it — that is an acceptable residual
+      risk documented in SEC-C.  The PIN still briefly appears in cmd.exe's argument list
+      (SEC-C), which requires a native CA DLL to eliminate.
+    -->
+    <CustomAction Id="WritePinToFile"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="[SystemFolder]cmd.exe /d /c echo [SCREAMSAVER_PIN]&gt;[TempFolder]screamsaver_uninstall.pin &amp;&amp; icacls &quot;[TempFolder]screamsaver_uninstall.pin&quot; /inheritance:r /grant:r &quot;SYSTEM:F&quot; /grant:r &quot;Administrators:F&quot;"
+                  Execute="immediate"
+                  Return="check"
+                  Impersonate="yes" />
+
+    <CustomAction Id="VerifySilentUninstallPin"
+                  FileRef="UninstallHelperExe"
+                  ExeCommand="--silent --pin-file &quot;[TempFolder]screamsaver_uninstall.pin&quot;"
+                  Execute="immediate"
+                  Return="check"
+                  Impersonate="yes" />
+
+    <InstallUISequence>
+      <!-- Interactive uninstall: show PIN dialog. Aborts if wrong PIN or cancelled. -->
+      <Custom Action="CheckUninstallPin" Before="ProgressDlg">
+        <![CDATA[REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE]]>
+      </Custom>
+    </InstallUISequence>
+
+    <InstallExecuteSequence>
+      <!--
+        Block silent uninstall (UILevel < 3 means no UI sequence ran, so no PIN was checked).
+        Both CAs run before any files are touched so nothing is partially removed on abort.
+        WritePinToFile must run before VerifySilentUninstallPin.
+      -->
+      <Custom Action="WritePinToFile" Before="VerifySilentUninstallPin">
+        <![CDATA[REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE AND UILevel < 3]]>
+      </Custom>
+      <Custom Action="VerifySilentUninstallPin" Before="RemoveFiles">
+        <![CDATA[REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE AND UILevel < 3]]>
+      </Custom>
+    </InstallExecuteSequence>
+
+  </Package>
+
+  <Fragment>
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Screamsaver" />
+    </StandardDirectory>
+  </Fragment>
+
+</Wix>

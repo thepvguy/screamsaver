@@ -1,0 +1,59 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Fragment>
+    <ComponentGroup Id="RegistryComponents" Directory="INSTALLFOLDER">
+
+      <!-- App settings in HKLM (written once at install; service manages thereafter) -->
+      <Component Id="RegistrySettingsComponent" Guid="E4F5A6B7-C8D9-4012-EF01-234567890123">
+        <RegistryKey Root="HKLM" Key="SOFTWARE\Screamsaver">
+          <!--
+            ACL: Administrators and SYSTEM get full control; Users get read-only.
+            Applied by the MSI engine when this component installs — no scripting needed.
+            util:PermissionEx on the RegistryKey that this component owns ensures the ACE
+            is set atomically and rolls back correctly on failure.
+          -->
+          <util:PermissionEx User="SYSTEM"         GenericAll="yes" />
+          <util:PermissionEx User="Administrators" GenericAll="yes" />
+          <util:PermissionEx User="Users"          Read="yes" />
+          <RegistryValue Name="ThresholdDb"      Value="-20.0"  Type="string" Action="write" />
+          <RegistryValue Name="CooldownSeconds"  Value="30"     Type="integer" Action="write" />
+          <RegistryValue Name="FadeInDurationMs" Value="0"      Type="integer" Action="write" />
+          <RegistryValue Name="FadeOutDurationMs" Value="5000"  Type="integer" Action="write" />
+          <RegistryValue Name="MaxOpacity"       Value="1.0"    Type="string" Action="write" />
+          <RegistryValue Name="OverlayColor"     Value="#000000" Type="string" Action="write" />
+          <RegistryValue Name="OverlayImagePath" Value=""       Type="string" Action="write" />
+          <!-- INST-B: write all three credential values as empty strings so the registry
+               layout is consistent at install time. SettingsRepository.LoadCredentials
+               returns empty strings for missing values, so the runtime behaviour is
+               identical — but absent PinHmacKey/Salt caused confusing debug traces. -->
+          <RegistryValue Name="PinHash"          Value=""       Type="string" Action="write" />
+          <RegistryValue Name="PinHmacKey"       Value=""       Type="string" Action="write" />
+          <RegistryValue Name="PinHmacSalt"      Value=""       Type="string" Action="write" />
+        </RegistryKey>
+        <KeyPath>
+          <RegistryValue Root="HKLM"
+                         Key="SOFTWARE\Screamsaver"
+                         Name="Installed"
+                         Value="1"
+                         Type="integer"
+                         Action="write" />
+        </KeyPath>
+      </Component>
+
+      <!-- HKLM Run key so tray app starts for all users (cannot be removed by standard user) -->
+      <Component Id="AutoRunComponent" Guid="F5A6B7C8-D9E0-4123-F012-345678901234">
+        <RegistryValue Root="HKLM"
+                       Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+                       Name="Screamsaver"
+                       Value="[INSTALLFOLDER]Screamsaver.TrayApp.exe"
+                       Type="string"
+                       Action="write"
+                       KeyPath="yes" />
+      </Component>
+
+
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>
