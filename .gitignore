@@ -482,3 +482,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Claude Code infrastructure (local only)
+.claude/
+CLAUDE.md
+issues.md
