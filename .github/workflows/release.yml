@@ -22,11 +22,17 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Install WiX
-        run: dotnet tool install --global wix
+        run: |
+          dotnet tool install --global wix
+          # Refresh PATH in this step so wix is findable immediately
+          $env:PATH = "$env:USERPROFILE\.dotnet\tools;$env:PATH"
+          # Persist to GITHUB_PATH so Build MSI step inherits it (Build.ps1 calls wix build)
+          "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          wix extension add WixToolset.Util.wixext
+        shell: pwsh
 
       - name: Build MSI
         run: |
-          $env:PATH = "$env:USERPROFILE\.dotnet\tools;$env:PATH"
           $version = '${{ github.ref_name }}' -replace '^v', ''
           & "${{ github.workspace }}/Screamsaver.Installer/Build.ps1" -Version $version
         shell: pwsh
