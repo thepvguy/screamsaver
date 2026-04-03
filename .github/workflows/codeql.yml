@@ -1,0 +1,36 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron: '0 8 * * 1'  # Weekly Monday 08:00 UTC
+
+jobs:
+  analyze:
+    runs-on: windows-latest
+    permissions:
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # MinVer needs full history to resolve version from tags
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+
+      - name: Build
+        run: dotnet build -c Release
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
