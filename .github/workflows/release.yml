@@ -22,13 +22,11 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Install WiX
-        run: |
-          dotnet tool install --global wix
-          wix extension add WixToolset.Util.wixext
-        shell: pwsh
+        run: dotnet tool install --global wix
 
       - name: Build MSI
         run: |
+          $env:PATH = "$env:USERPROFILE\.dotnet\tools;$env:PATH"
           $version = '${{ github.ref_name }}' -replace '^v', ''
           & "${{ github.workspace }}/Screamsaver.Installer/Build.ps1" -Version $version
         shell: pwsh
