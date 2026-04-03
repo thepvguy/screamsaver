@@ -6,7 +6,7 @@
 
       <!-- App settings in HKLM (written once at install; service manages thereafter) -->
       <Component Id="RegistrySettingsComponent" Guid="E4F5A6B7-C8D9-4012-EF01-234567890123">
-        <RegistryKey Root="HKLM" Key="SOFTWARE\Screamsaver">
+        <RegistryKey Id="ScreamsaverRegKey" Root="HKLM" Key="SOFTWARE\Screamsaver" ForceCreateOnInstall="yes">
           <!--
             ACL: Administrators and SYSTEM get full control; Users get read-only.
             Applied by the MSI engine when this component installs — no scripting needed.
@@ -30,15 +30,8 @@
           <RegistryValue Name="PinHash"          Value=""       Type="string" Action="write" />
           <RegistryValue Name="PinHmacKey"       Value=""       Type="string" Action="write" />
           <RegistryValue Name="PinHmacSalt"      Value=""       Type="string" Action="write" />
+          <RegistryValue Name="Installed"        Value="1"      Type="integer" Action="write" KeyPath="yes" />
         </RegistryKey>
-        <KeyPath>
-          <RegistryValue Root="HKLM"
-                         Key="SOFTWARE\Screamsaver"
-                         Name="Installed"
-                         Value="1"
-                         Type="integer"
-                         Action="write" />
-        </KeyPath>
       </Component>
 
       <!-- HKLM Run key so tray app starts for all users (cannot be removed by standard user) -->

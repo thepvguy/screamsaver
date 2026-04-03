@@ -9,9 +9,6 @@
 
     <SummaryInformation Description="Screamsaver parental control application" />
 
-    <!-- Always require elevation -->
-    <Require AdminPrivileges="yes" />
-
     <!-- Block downgrades -->
     <MajorUpgrade DowngradeErrorMessage="A newer version of Screamsaver is already installed." />
 
@@ -86,9 +83,7 @@
 
     <InstallUISequence>
       <!-- Interactive uninstall: show PIN dialog. Aborts if wrong PIN or cancelled. -->
-      <Custom Action="CheckUninstallPin" Before="ProgressDlg">
-        <![CDATA[REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE]]>
-      </Custom>
+      <Custom Action="CheckUninstallPin" Before="ProgressDlg" Condition='REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE' />
     </InstallUISequence>
 
     <InstallExecuteSequence>
@@ -97,12 +92,8 @@
         Both CAs run before any files are touched so nothing is partially removed on abort.
         WritePinToFile must run before VerifySilentUninstallPin.
       -->
-      <Custom Action="WritePinToFile" Before="VerifySilentUninstallPin">
-        <![CDATA[REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE AND UILevel < 3]]>
-      </Custom>
-      <Custom Action="VerifySilentUninstallPin" Before="RemoveFiles">
-        <![CDATA[REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE AND UILevel < 3]]>
-      </Custom>
+      <Custom Action="WritePinToFile" Before="VerifySilentUninstallPin" Condition='REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE AND UILevel &lt; 3' />
+      <Custom Action="VerifySilentUninstallPin" Before="RemoveFiles" Condition='REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE AND UILevel &lt; 3' />
     </InstallExecuteSequence>
 
   </Package>
