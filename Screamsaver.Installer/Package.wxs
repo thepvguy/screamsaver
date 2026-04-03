@@ -83,7 +83,7 @@
 
     <InstallUISequence>
       <!-- Interactive uninstall: show PIN dialog. Aborts if wrong PIN or cancelled. -->
-      <Custom Action="CheckUninstallPin" Before="ProgressDlg" Condition='REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE' />
+      <Custom Action="CheckUninstallPin" Before="ExecuteAction" Condition='REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE' />
     </InstallUISequence>
 
     <InstallExecuteSequence>
