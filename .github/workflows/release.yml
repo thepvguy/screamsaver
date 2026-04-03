@@ -22,12 +22,15 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Install WiX
-        run: dotnet tool install --global wix
+        run: |
+          dotnet tool install --global wix
+          wix extension add WixToolset.Util.wixext
+        shell: pwsh
 
       - name: Build MSI
         run: |
           $version = '${{ github.ref_name }}' -replace '^v', ''
-          powershell -ExecutionPolicy Bypass -File Screamsaver.Installer/Build.ps1 -Version $version
+          & "${{ github.workspace }}/Screamsaver.Installer/Build.ps1" -Version $version
         shell: pwsh
 
       - name: Create GitHub Release
