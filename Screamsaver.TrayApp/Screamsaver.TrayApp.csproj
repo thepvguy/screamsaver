@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <!-- SMELL-2: structured logging for TrayApp via Windows Event Log (matches the Service) -->
-    <PackageReference Include="Microsoft.Extensions.Logging.EventLog" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.EventLog" Version="10.0.5" />
   </ItemGroup>
 
   <PropertyGroup>
